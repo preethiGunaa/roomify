@@ -20,7 +20,7 @@ export default function Home() {
     const handleUploadComplete = async(base64Image: string) => {
         const newId = Date.now().toString();
 
-        navigate(`/visualizer/${newId}`);
+        navigate(`/visualize/${newId}`);
 
         return true;
     }
@@ -68,7 +68,7 @@ export default function Home() {
                       <p>Supports JPG, PNG, formats upto 10MB</p>
                   </div>
 
-                  <Upload onComplete={handleUploadComplete} />
+                  <Upload />
               </div>
           </div>
       </section>

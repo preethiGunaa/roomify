@@ -8,6 +8,13 @@ interface UploadProps {
 }
 
 const Upload = ({ onComplete }: UploadProps) => {
+    const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
+
+            const isValidFile = (candidate?: File) =>
+                !!candidate &&
+                ALLOWED_TYPES.includes(candidate.type) &&
+                candidate.size <= MAX_UPLOAD_SIZE_BYTES
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -29,9 +36,10 @@ const Upload = ({ onComplete }: UploadProps) => {
         };
     }, []);
 
-    const processFile = useCallback((file: File) => {
+    const processFile = useCallback((file: File | undefined) => {
         if (!isSignedIn) return;
 
+        // @ts-ignore
         setFile(file);
         setProgress(0);
 
@@ -40,9 +48,14 @@ const Upload = ({ onComplete }: UploadProps) => {
             setFile(null);
             setProgress(0);
         };
-        reader.onloadend = () => {
-            const base64Data = reader.result as string;
 
+        reader.onload = () => {
+                       if (typeof reader.result !== "string") {
+                               setFile(null);
+                               setProgress(0);
+                               return;
+                           }
+                       const base64Data = reader.result;
             intervalRef.current = setInterval(() => {
                 setProgress((prev) => {
                     const next = prev + PROGRESS_INCREMENT;
@@ -61,6 +74,7 @@ const Upload = ({ onComplete }: UploadProps) => {
                 });
             }, PROGRESS_INTERVAL_MS);
         };
+        // @ts-ignore
         reader.readAsDataURL(file);
     }, [isSignedIn, onComplete]);
 
@@ -81,8 +95,7 @@ const Upload = ({ onComplete }: UploadProps) => {
         if (!isSignedIn) return;
 
         const droppedFile = e.dataTransfer.files[0];
-        const allowedTypes = ['image/jpeg', 'image/png'];
-        if (droppedFile && allowedTypes.includes(droppedFile.type)) {
+               if (isValidFile(droppedFile)) {
             processFile(droppedFile);
         }
     };
@@ -91,8 +104,8 @@ const Upload = ({ onComplete }: UploadProps) => {
         if (!isSignedIn) return;
 
         const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            processFile(selectedFile);
+                if (isValidFile(selectedFile)) {
+                processFile(selectedFile);
         }
     };
 
@@ -108,7 +121,7 @@ const Upload = ({ onComplete }: UploadProps) => {
                     <input
                         type="file"
                         className="drop-input"
-                        accept=".jpg,.jpeg,.png,.webp"
+                        accept=".jpg,.jpeg,.png"
                         disabled={!isSignedIn}
                         onChange={handleChange}
                     />
